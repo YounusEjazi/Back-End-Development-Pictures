@@ -82,6 +82,3 @@ def test_delete_picture_by_id(client):
     assert res.json['length'] == 10
     res = client.delete("/picture/100")
     assert res.status_code == 404
-
-
-

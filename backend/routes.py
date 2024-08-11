@@ -61,46 +61,56 @@ def get_picture_by_id(id):
 ######################################################################
 # CREATE A PICTURE
 ######################################################################
-@app.route("/picture/<string:id>", methods=["POST"])
-def create_picture(id):
-    """
-    Create a new picture entry with the given ID.
-    
-    :param id: The ID of the picture to create
-    :return: JSON response indicating success or error
-    """
-    # Extract picture data from the request body
+@app.route("/picture", methods=["POST"])
+def create_picture():
     picture_data = request.get_json()
+    if not picture_data or "id" not in picture_data:
+        return jsonify({"Message": "No data provided or ID is missing"}), 400
 
-    # Check if a picture with the given ID already exists
-    existing_picture = next((item for item in data if item["id"] == id), None)
+    # Check if the ID is an integer
+    try:
+        picture_id = int(picture_data["id"])
+    except ValueError:
+        return jsonify({"Message": "Invalid ID format"}), 400
+
+    # Check if a picture with the same ID already exists
+    existing_picture = next((item for item in data if item["id"] == picture_id), None)
     if existing_picture:
-        # Return a 302 status code if the picture already exists
-        return jsonify({"Message": f"Picture with id {id} already present"}), 302
+        return jsonify({"Message": f"picture with id {picture_id} already present"}), 302
 
-    # Append the new picture data to the data list
-    picture_data["id"] = id  # Ensure the ID is set correctly
+    # Add the new picture to the data list
     data.append(picture_data)
-    
-    # Optionally, save the updated data back to the file
-    with open(json_url, 'w') as file:
-        json.dump(data, file, indent=4)
-
-    # Return a success message
-    return jsonify({"Message": "Picture created successfully"}), 201
-
+    return jsonify(picture_data), 201
 ######################################################################
 # UPDATE A PICTURE
 ######################################################################
-
-
 @app.route("/picture/<int:id>", methods=["PUT"])
-def update_picture(id):
-    pass
+def update_picture_by_id(id):
+    picture_data = request.get_json()
+    if not picture_data:
+        return jsonify({"Message": "No data provided"}), 400
 
+    # Find the picture with the given ID
+    picture = next((item for item in data if item["id"] == id), None)
+    if not picture:
+        return jsonify({"Message": "Picture not found"}), 404
+
+    # Update the picture data
+    picture.update(picture_data)
+    return jsonify(picture), 200 
 ######################################################################
 # DELETE A PICTURE
 ######################################################################
 @app.route("/picture/<int:id>", methods=["DELETE"])
 def delete_picture(id):
-    pass
+    # Find the picture with the given ID
+    picture = next((item for item in data if item["id"] == id), None)
+    
+    if picture:
+        # Remove the picture from the list
+        data.remove(picture)
+        # Return an empty body with HTTP 204 No Content
+        return '', 204
+    else:
+        # If the picture was not found, return a 404 error
+        return jsonify({"message": "picture not found"}), 404
